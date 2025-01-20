@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     hash::{BuildHasherDefault, Hash},
     ops::{Deref, DerefMut},
     thread::available_parallelism,
@@ -14,6 +15,7 @@ use crate::{
         CachedDataItem, CachedDataItemKey, CachedDataItemStorage, CachedDataItemType,
         CachedDataItemValue, CachedDataItemValueRef, CachedDataItemValueRefMut,
     },
+    histogram::Histogram,
     utils::dash_map_multi::{get_multiple_mut, RefMut},
 };
 
@@ -131,6 +133,39 @@ impl InnerStorage {
         Self {
             map: Default::default(),
             persistance_state: PersistanceState::default(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.map.iter().map(|storage| storage.len()).sum::<usize>()
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.map
+            .iter()
+            .map(|storage| storage.capacity())
+            .sum::<usize>()
+    }
+
+    pub fn size(&self) -> usize {
+        self.map.iter().map(|storage| storage.size()).sum::<usize>()
+            + self.map.len() * size_of::<CachedDataItemStorage>()
+    }
+
+    pub fn capacity_size(&self) -> usize {
+        self.map
+            .iter()
+            .map(|storage| storage.capacity_size())
+            .sum::<usize>()
+            + self.map.capacity() * size_of::<CachedDataItemStorage>()
+    }
+
+    pub fn count_histogram(&self, histogram: &mut HashMap<CachedDataItemType, Histogram>) {
+        for storage in self.map.iter() {
+            histogram
+                .entry(storage.ty())
+                .or_default()
+                .add(storage.len());
         }
     }
 
@@ -278,6 +313,50 @@ impl InnerStorage {
 
 pub struct Storage {
     map: DashMap<TaskId, InnerStorage, BuildHasherDefault<FxHasher>>,
+}
+
+impl Storage {
+    pub fn data_len(&self) -> usize {
+        self.map
+            .iter()
+            .map(|key_value| key_value.value().len())
+            .sum::<usize>()
+    }
+
+    pub fn data_capacity(&self) -> usize {
+        self.map
+            .iter()
+            .map(|key_value| key_value.value().capacity())
+            .sum::<usize>()
+    }
+
+    pub fn size(&self) -> usize {
+        self.map
+            .iter()
+            .map(|key_value| key_value.value().size())
+            .sum::<usize>()
+            + self.map.len() * size_of::<(TaskId, InnerStorage)>()
+    }
+
+    pub fn capacity_size(&self) -> usize {
+        self.map
+            .iter()
+            .map(|key_value| key_value.value().capacity_size())
+            .sum::<usize>()
+            + self.map.capacity() * size_of::<(TaskId, InnerStorage)>()
+    }
+
+    pub fn tasks(&self) -> usize {
+        self.map.len()
+    }
+
+    pub fn count_histogram(&self) -> HashMap<CachedDataItemType, Histogram> {
+        let mut histogram = HashMap::new();
+        for pair in self.map.iter() {
+            pair.value().count_histogram(&mut histogram);
+        }
+        histogram
+    }
 }
 
 impl Storage {
