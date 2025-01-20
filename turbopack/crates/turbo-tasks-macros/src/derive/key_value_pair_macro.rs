@@ -293,12 +293,12 @@ pub fn derive_key_value_pair(input: TokenStream) -> TokenStream {
                         },
                         size: quote! {
                             #storage_name::#variant_name { storage } => {
-                                storage.len() * std::mem::size_of::<#(#value_types)*>()
+                                storage.len() * std::mem::size_of::<(#(#key_types)*, #(#value_types)*)>()
                             }
                         },
                         capacity_size: quote! {
                             #storage_name::#variant_name { storage } => {
-                                storage.capacity() * std::mem::size_of::<#(#value_types)*>()
+                                storage.capacity() * std::mem::size_of::<(#(#key_types)*, #(#value_types)*)>()
                             }
                         },
                         iter: quote! {
@@ -400,12 +400,12 @@ pub fn derive_key_value_pair(input: TokenStream) -> TokenStream {
                         },
                         size: quote! {
                             #storage_name::#variant_name { storage } => {
-                                storage.len() * std::mem::size_of::<#(#value_types)*>()
+                                storage.len() * std::mem::size_of::<((#(#key_types),*), #(#value_types)*)>()
                             }
                         },
                         capacity_size: quote! {
                             #storage_name::#variant_name { storage } => {
-                                storage.capacity() * std::mem::size_of::<#(#value_types)*>()
+                                storage.capacity() * std::mem::size_of::<((#(#key_types),*), #(#value_types)*)>()
                             }
                         },
                         iter: quote! {
