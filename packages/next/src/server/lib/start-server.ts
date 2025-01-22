@@ -192,6 +192,9 @@ export async function startServer(
   if (keepAliveTimeout) {
     server.keepAliveTimeout = keepAliveTimeout
   }
+
+  server.httpTimeout = 121000
+  
   server.on('upgrade', async (req, socket, head) => {
     try {
       await upgradeHandler(req, socket, head)
