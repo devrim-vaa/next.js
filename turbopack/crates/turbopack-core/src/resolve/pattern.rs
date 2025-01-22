@@ -1424,18 +1424,18 @@ pub async fn read_matches(
                 } else {
                     let subpath = &str[..=str.rfind('/').unwrap()];
                     if handled.insert(subpath) {
-                        if let Some(fs_path) = &*if force_in_lookup_dir {
+                        let fs_path = if force_in_lookup_dir {
                             lookup_dir.try_join_inside(subpath.into()).await?
                         } else {
                             lookup_dir.try_join(subpath.into()).await?
-                        } {
-                            let fs_path = fs_path.resolve().await?;
+                        };
+                        if let Some(fs_path) = &*fs_path {
                             let len = prefix.len();
                             prefix.push_str(subpath);
                             nested.push((
                                 0,
                                 read_matches(
-                                    fs_path,
+                                    **fs_path,
                                     prefix.clone().into(),
                                     force_in_lookup_dir,
                                     pattern,
