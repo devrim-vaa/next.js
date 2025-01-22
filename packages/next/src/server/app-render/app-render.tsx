@@ -2708,7 +2708,7 @@ async function prerenderToStream(
             implicitTags: implicitTags,
             renderSignal: initialClientController.signal,
             controller: initialClientController,
-            cacheSignal: null,
+            cacheSignal,
             dynamicTracking: null,
             revalidate: INFINITE_CACHE,
             expire: INFINITE_CACHE,
@@ -2761,7 +2761,8 @@ async function prerenderToStream(
                     : [bootstrapScript],
                 }
               ),
-            () => {
+            async () => {
+              await cacheSignal.cacheReady()
               initialClientController.abort()
             }
           ).catch((err) => {
@@ -2833,7 +2834,7 @@ async function prerenderToStream(
                 prerenderIsPending = false
                 return prerenderResult
               },
-              () => {
+              async () => {
                 if (finalServerController.signal.aborted) {
                   // If the server controller is already aborted we must have called something
                   // that required aborting the prerender synchronously such as with new Date()
@@ -2927,7 +2928,7 @@ async function prerenderToStream(
                   : [bootstrapScript],
               }
             ),
-          () => {
+          async () => {
             finalClientController.abort()
           }
         )
